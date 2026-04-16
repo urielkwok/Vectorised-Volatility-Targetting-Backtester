@@ -9,8 +9,8 @@ def vol_backtest(prices, target_vol=0.15, lookback=20, max_leverage=2.0):
     valid_weights = weights.clip(upper=max_leverage)
     weight_used = valid_weights.shift(1)
 
-    daily_vol_returns = base_returns * weight_used
-    total_vol_returns = daily_vol_returns.cumsum().apply(np.exp)
+    vol_returns = base_returns * weight_used
+    total_vol_returns = vol_returns.cumsum().apply(np.exp)
     shifted_base_returns = base_returns.iloc[lookback + 1:]
     total_base_returns = shifted_base_returns.cumsum().apply(np.exp)
 
@@ -18,8 +18,26 @@ def vol_backtest(prices, target_vol=0.15, lookback=20, max_leverage=2.0):
         "base_returns": base_returns,
         "total_base_returns": total_base_returns,
         "weights": weight_used,
-        "daily_vol_returns": daily_vol_returns,
+        "vol_returns": vol_returns,
         "total_vol_returns": total_vol_returns
     }).dropna()
 
     return results
+
+
+def get_metrics(daily_returns, total_returns, risk_free_rate=0.04):
+    annual_returns = np.exp(daily_returns.mean() * 252) - 1
+    annual_volatility = daily_returns.std() * np.sqrt(252)
+    sharpe_ratio = (annual_returns - risk_free_rate) / annual_volatility
+    peak_returns = total_returns.cummax()
+    drawdowns = (total_returns - peak_returns) / peak_returns
+    max_drawdown = drawdowns.min()
+
+    metrics = {
+        "Annual returns": f"{annual_returns:.2%}",
+        "Annual volatility": f"{annual_volatility:.2%}",
+        "Sharpe ratio": f"{sharpe_ratio:.2f}",
+        "Max_drawdown": f"{max_drawdown:.2%}"
+    }
+
+    return metrics
