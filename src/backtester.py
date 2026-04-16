@@ -11,7 +11,8 @@ def vol_backtest(prices, target_vol=0.15, lookback=20, max_leverage=2.0):
 
     daily_vol_returns = base_returns * weight_used
     total_vol_returns = daily_vol_returns.cumsum().apply(np.exp)
-    total_base_returns = base_returns.cumsum().apply(np.exp)
+    shifted_base_returns = base_returns.iloc[lookback + 1:]
+    total_base_returns = shifted_base_returns.cumsum().apply(np.exp)
 
     results = pd.DataFrame({
         "base_returns": base_returns,
